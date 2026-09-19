@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071222">
+<link rel="manifest" href="manifest.json">
+<title>Transformation 30 jours</title>
+<style>
+:root{--bg:#051020;--card:#0e1a2c;--card2:#172335;--accent:#8b6cff;--text:#f4f6fb;--muted:#9ba7ba;--ok:#6ee7b7}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#051020,#081326);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif;padding:20px 16px 100px}
+.app{max-width:620px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.eyebrow{color:var(--muted);font-size:13px}.title{font-size:29px;font-weight:800;margin:3px 0}.progress{height:9px;background:#172335;border-radius:99px;overflow:hidden}.bar{height:100%;background:var(--accent);width:0%;transition:.25s}
+.card{background:rgba(14,26,44,.94);border:1px solid #1b2a40;border-radius:20px;padding:16px;margin:14px 0;box-shadow:0 10px 30px #0002}.section-title{font-weight:800;margin-bottom:10px}.item{display:flex;gap:12px;align-items:center;padding:13px 4px;border-bottom:1px solid #ffffff0b}.item:last-child{border:0}.item input{width:21px;height:21px;accent-color:var(--accent)}.item.done span{text-decoration:line-through;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:var(--card2);border-radius:14px;padding:12px}.stat b{display:block;font-size:20px}.stat small{color:var(--muted)}button{border:0;border-radius:13px;padding:11px 14px;background:var(--accent);color:white;font-weight:700}button.secondary{background:var(--card2)}.actions{display:flex;gap:8px;flex-wrap:wrap}.report{white-space:pre-wrap;background:#08101d;border-radius:14px;padding:12px;font-size:12px;color:#cbd5e1;max-height:260px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div><div class="eyebrow">30 JOURS</div><div class="title">Transformation</div></div>
+    <button class="secondary" id="reset">Réinitialiser</button>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between"><b id="dayLabel">Jour 1/30</b><span id="pct">0%</span></div>
+    <div class="progress" style="margin-top:10px"><div class="bar" id="bar"></div></div>
+  </div>
+  <div id="sections"></div>
+  <div class="card">
+    <div class="section-title">📊 Aujourd'hui</div>
+    <div class="stats">
+      <div class="stat"><b id="done">0/0</b><small>actions</small></div>
+      <div class="stat"><b id="score">0%</b><small>complété</small></div>
+      <div class="stat"><b id="streak">0</b><small>jours suivis</small></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title">📤 Compte rendu</div>
+    <p style="color:var(--muted);font-size:13px">Copie ce rapport et envoie-le ici pour analyser ta progression.</p>
+    <div class="actions"><button id="copy">Copier le compte rendu</button><button class="secondary" id="next">Passer au jour suivant</button></div>
+    <div class="report" id="report" style="margin-top:12px"></div>
+  </div>
+</div>
+<script>
+const sections=[
+["☀️ MATIN",["Lumière naturelle","Eau selon la soif","Routine visage","Petit-déjeuner complet si possible","Chin tucks + wall angels"]],
+["🏃 JOURNÉE",["Repas complets et variés","10–30 min de marche / extérieur","Mastication normale des deux côtés","Temps d'écran maîtrisé"]],
+["🏋️ SALLE",["Séance prévue réalisée","Progression / exercices notés","Cou uniquement si prévu et sans douleur"]],
+["🌙 SOIR",["Routine visage","Cheveux / cuir chevelu propres et confortables","Massage doux des pieds","Téléphone réduit avant le sommeil","Objectif de sommeil 8–9 h"]]
+];
+let state=JSON.parse(localStorage.getItem("transformation30")||'{"day":1,"days":{}}');
+function key(){return String(state.day)}
+function items(){return sections.flatMap(x=>x[1])}
+function save(){localStorage.setItem("transformation30",JSON.stringify(state))}
+function render(){
+ const d=state.days[key()]||{};
+ let total=0,done=0,html="";
+ sections.forEach(([name,list])=>{
+   html+=`<div class="card"><div class="section-title">${name}</div>`;
+   list.forEach((label,i)=>{const id=name+i; const checked=!!d[id]; total++; if(checked)done++;
+    html+=`<label class="item ${checked?'done':''}"><input type="checkbox" data-id="${id}" ${checked?'checked':''}><span>${label}</span></label>`;
+   }); html+="</div>";
+ });
+ document.getElementById("sections").innerHTML=html;
+ document.querySelectorAll("input").forEach(el=>el.onchange=()=>{(state.days[key()]??={})[el.dataset.id]=el.checked;save();render()});
+ const pct=total?Math.round(done/total*100):0;
+ document.getElementById("dayLabel").textContent=`Jour ${state.day}/30`;
+ document.getElementById("pct").textContent=pct+"%";document.getElementById("bar").style.width=pct+"%";
+ document.getElementById("done").textContent=`${done}/${total}`;document.getElementById("score").textContent=pct+"%";
+ document.getElementById("streak").textContent=Object.keys(state.days).length;
+ document.getElementById("report").textContent=report(pct,done,total);
+}
+function report(pct,done,total){
+ return `TRANSFORMATION 30 JOURS — JOUR ${state.day}/30
+Actions : ${done}/${total} (${pct}%)
+Sommeil : à renseigner
+Temps d'écran : à renseigner
+Séance : à renseigner
+Énergie : à renseigner
+Note du jour : ${pct}/100
+
+Checklist :
+${sections.map(([n,l])=>n+"\\n"+l.map((x,i)=>"- "+x).join("\\n")).join("\\n\\n")}
+
+Tu peux ajouter tes observations sous ce rapport avant de me l'envoyer.`;
+}
+document.getElementById("copy").onclick=async()=>{await navigator.clipboard.writeText(document.getElementById("report").textContent);alert("Compte rendu copié !")};
+document.getElementById("next").onclick=()=>{if(state.day<30){state.day++;save();render()}};
+document.getElementById("reset").onclick=()=>{if(confirm("Réinitialiser toute la progression ?")){state={day:1,days:{}};save();render()}};
+render();
+</script>
+</body></html>
